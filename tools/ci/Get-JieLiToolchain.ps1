@@ -71,6 +71,27 @@ if ($sevenZip) {
     if ($found) { Use-Pi32 $found }
 }
 
+# The JieLi installer is Inno Setup: unpack it with innoextract, without running it.
+try {
+    $ie = Join-Path $work 'innoextract'
+    curl.exe --fail --location --retry 3 --output "$ie.zip" 'https://github.com/dscharrer/innoextract/releases/download/1.9/innoextract-1.9-windows.zip'
+    if ($LASTEXITCODE) { throw 'innoextract download failed' }
+    Expand-Archive -LiteralPath "$ie.zip" -DestinationPath $ie -Force
+    $exe = Get-ChildItem -LiteralPath $ie -Recurse -Filter innoextract.exe | Select-Object -First 1
+    $out = Join-Path $work 'inno'
+    Write-Host 'Unpacking the Inno Setup payload with innoextract'
+    & $exe.FullName --silent --extract --output-dir $out $installer
+    Write-Host "innoextract exit code $LASTEXITCODE"
+    $found = Find-Pi32 @($out)
+    if ($found) {
+        # Copy to the conventional location so paths stay short and space-free.
+        New-Item -ItemType Directory -Force -Path 'C:\JL' | Out-Null
+        Copy-Item -LiteralPath $found -Destination 'C:\JL\pi32' -Recurse -Force
+        Use-Pi32 'C:\JL\pi32'
+    }
+    Get-ChildItem -LiteralPath $out -Directory -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  payload: $($_.Name)" }
+} catch { Write-Host "innoextract route failed: $_" }
+
 $target = 'C:\JL'
 foreach ($switches in @(@('/S', "/D=$target"), @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/DIR=$target"))) {
     Write-Host "Running installer silently: $($switches -join ' ')"
