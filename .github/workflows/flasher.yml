@@ -56,6 +56,19 @@ jobs:
         run: |
           ./sdk/Build.ps1 -Package
           node tools/theme-workbench.mjs build/official-web/FM1-Official-Open-Source.html
+      - name: Size report (pi32 objects)
+        if: always()
+        shell: pwsh
+        run: |
+          $nm = Join-Path $env:FM1_PI32_TOOLCHAIN 'bin/llvm-nm.exe'
+          if (!(Test-Path build/dx7/obj)) { exit 0 }
+          foreach ($o in Get-ChildItem build/dx7/obj -Filter *.obj) {
+            $sum = 0; $lines = & $nm --print-size --size-sort --radix=d $o.FullName 2>$null
+            foreach ($l in $lines) { $p = $l -split '\s+'; if ($p.Count -ge 4 -and $p[2] -match '^[TtRrDd]$') { $sum += [int64]$p[1] } }
+            Write-Host ("{0,8} {1}" -f $sum, $o.Name)
+          }
+          $screen = Get-ChildItem build/dx7/obj -Filter '*screen*.obj' | Select-Object -First 1
+          if ($screen) { & $nm --print-size --size-sort --radix=d $screen.FullName | Select-Object -Last 70 }
       - uses: actions/upload-artifact@v4
         with:
           name: firmware
