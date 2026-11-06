@@ -14,18 +14,16 @@ sampler), MIDI, Bluetooth and the workbench. It adds:
   sounds draw on 70s, 80s and 90s horror and science fiction: warbly tape, dramatic organs,
   ghostly noises, flying saucers and mainframes. Every voice is original programming and was
   level-matched by auditioning it in the engine.
-* **HAUNT LAB**, a sound-design page with 5 pages of macros. Each macro edits
-  the real DX7 voice parameters. It also has 9 alternative tunings and an
+* **HAUNT LAB**, a sound-design page with 4 pages of macros. Each macro edits
+  the real DX7 voice parameters. It also has 6 alternative tunings and an
   on-device VAULT that stores your own voices in the 25 user slots.
 * **16 haunted demo projects**, re-scored around the new voices.
 
-> **Status: unofficial and use at your own risk.** The browser build of this exact
-> source compiles with `-Wall -Wextra -Werror` and has been tested in
-> the simulator: all screens, the HAUNT LAB controls, VAULT store/load/exorcise
-> and rendered audio of every preset and demo (levels and spectra checked). The device `.fwsc` **has not been
-> compiled or flashed yet**. That needs the Windows-only JieLi toolchain (see Build).
-> The app source passes a device-configuration compile check against the SDK
-> headers, and every engine symbol it calls is in `sdk/lib/libfm1_engine.a`.
+> **Status: unofficial and use at your own risk.** GitHub Actions compiles, links and
+> packages the real FM-1 firmware with M-VAVE's toolchain and image checks. The browser build
+> compiles with `-Wall -Wextra -Werror` and has been tested in the simulator: all screens, the
+> HAUNT LAB controls, VAULT store and exorcise, and rendered audio of every preset and demo
+> (levels and spectra checked). The firmware **has not yet been flashed to a real FM-1**.
 > Keep M-VAVE's stock **FM-1 V15** firmware ready (m-vave.com/download).
 > The workbench can always return to it.
 
@@ -61,9 +59,9 @@ Keys keep playing while you sculpt.
 
 | Control | Action |
 |---|---|
-| SELECT | Page: WARBLE, GHOST, CURSE, TUNING, VAULT |
-| K1-K4 | The four macros on the current page (the candles show their levels) |
-| PRESETS | Change DX7 program, as on the other FM pages |
+| SELECT | Page: WARBLE, GHOST, CURSE, VAULT |
+| K1-K4 | The macros on the current page (the green-flamed candles show their levels) |
+| PRESETS | Change DX7 program; programs 104-128 are your USER slots |
 | ALGORITHM | Change DX7 algorithm |
 | SAVE | On VAULT, runs the selected action; elsewhere it saves the project as usual |
 
@@ -71,27 +69,26 @@ Keys keep playing while you sculpt.
 |---|---|---|---|---|
 | 1 WARBLE | **WOW**: LFO pitch depth (raises PMS to 3 when needed) | **FLUTTER**: LFO speed | **DRIFT**: detune spread, alternating ± across operators | **WAVE**: TRI, SAW down, SAW up, SQR, SINE, S/H ("broken VCR") |
 | 2 GHOST | **HAUNT**: slower attack on every operator | **LINGER**: longer release | **VEIL**: lowers the modulators, so the sound gets purer and more ghostly | **SWOOP**: pitch-EG scoop in and droop out (+ from below, - from above) |
-| 3 CURSE | **POSSESS**: feedback 0-7 | **ROT**: drifts the modulator ratios inharmonic (clang, bells) | **CHAOS**: mutation strength 1-10 | **MUTATE**: each detent mutates the voice; CHAOS 6+ can change ratios, 9+ the algorithm |
-| 4 TUNING | **TUNING**: main scale | **WARP**: 0-200 % of the scale's cents | **ALT TUNE**: second scale for ALT steps | **ALT HOLD**: live alt tuning on/off |
-| 5 VAULT | **SLOT**: U01-U25 (programs 104-128) | **ACTION**: STORE, LOAD, EXORCISE | - | - |
+| 3 CURSE | **POSSESS**: feedback 0-7 | **TUNING**: 12-TET, HAUNTED, DROWNED, MOONSICK, WEREWOLF, SEPTIMAL | **MUTATE**: each detent mutates the voice; turn right for mild changes, left for wild ones | - |
+| 4 VAULT | **SLOT**: U01-U25 (programs 104-128) | **ACTION**: STORE or EXORCISE | - | - |
 
-The screen under the candles shows the live pitch warble (WARBLE), the volume
-envelope and pitch swoop (GHOST), the six operators' levels and ratios (CURSE),
-the cents deviation per key (TUNING) or the user slots (VAULT). The big
-pumpkin's face turns from calm to evil to possessed as the voice gets more
-cursed (feedback, warble, drift, modulation): sinister, then evil, then possessed with white-hot
-pupils. Its green candle glow follows the output level, and the candles burn green too.
+WARBLE draws the live pitch warble and VAULT shows the voice in the selected slot.
+The big pumpkin grins with a green candle glow that follows the output level. It turns
+possessed, with white-hot pupils, once the voice is cursed enough (feedback, warble, drift).
 
 **VAULT.** STORE writes the track's current DX7 voice into a user slot of the
-independent DX7 library. Overwriting a used slot asks for a second SAVE.
-LOAD brings a slot back onto the track. EXORCISE restores the voice as it was
-when you entered HAUNT LAB, so you can undo a whole run of macro or
-MUTATE edits at once. Rename a voice with the stock EDIT+REC name page before storing.
+independent DX7 library. Overwriting a used slot asks for a second SAVE. To load a slot,
+pick program 104-128 with PRESETS. EXORCISE restores the voice as it was when you entered
+HAUNT LAB, which undoes a whole run of macro or MUTATE edits at once. Rename a voice with
+the stock EDIT+REC name page before storing.
 
-**Tunings.** 12-TET, HAUNTED (fixed random detune), DROWNED (quarter-tone flats),
-MOONSICK (stretched), WEREWOLF (quarter-comma meantone with its howling wolf
-fifth), JUST MIN (5-limit), SEPTIMAL (7-limit), RAST 1/4 and GAMELAN. They use
-the engine's per-track tuning API, so they are saved with projects.
+**Tunings** use the engine's per-track tuning API, so they are saved with projects.
+WEREWOLF is quarter-comma meantone with its howling wolf fifth; SEPTIMAL uses 7-limit ratios.
+
+**Flash budget.** The FM-1's application area is 453,921 bytes, and stock FM1 Open V14
+nearly fills it. PumpkinWave fits by storing its sprites as mirrored halves, packing
+the preset bank column-wise (5.7 KB against the stock bank's 10.5 KB) and rebuilding the
+USER slots from a template. The CI build reports 453,448 bytes, 473 bytes to spare.
 
 ## Presets
 
