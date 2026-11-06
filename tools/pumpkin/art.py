@@ -194,9 +194,12 @@ CANDLE = """
 """
 BADGE = body(18, 14, top=2, ribs=(0.45,))
 MINI_BODY = body(13, 11, top=2, ribs=(0.5,))
-SPRITES = [("pumpkin", PUMPKIN), ("face_evil", FACE_EVIL), ("face_calm", FACE_CALM),
-           ("face_possessed", FACE_POSSESSED), ("mini", MINI), ("badge", BADGE),
-           ("bat_up", BAT_UP), ("bat_down", BAT_DOWN), ("skull", SKULL), ("candle", CANDLE)]
+def half(art, cols):
+    return "\n".join(r[:cols] for r in art.strip("\n").split("\n"))
+# Flash is tight on the FM-1: every sprite is symmetric and stored as its left
+# half; the firmware mirrors it while drawing.
+SPRITES = [("pumpkin", half(PUMPKIN, 16)), ("face_evil", half(FACE_EVIL, 16)),
+           ("face_possessed", half(FACE_POSSESSED, 16)), ("badge", half(BADGE, 9))]
 KEY = {'.': 0, ' ': 0, 'o': 1, 'O': 2, 'h': 3, 's': 4, 'g': 5, 'G': 6, 'Y': 7, 'd': 8,
        'w': 9, 'r': 10, 'p': 11, 'b': 12, 'e': 13, 'v': 14}
 
@@ -233,6 +236,7 @@ if __name__ == "__main__":
         body, bw, bh = grid(PUMPKIN)
         for name, art in SPRITES:
             g, w, h = grid(art)
+            g = [row + row[::-1] for row in g]; w *= 2
             img = Image.new("RGB", (w, h))
             for y in range(h):
                 for x in range(w):

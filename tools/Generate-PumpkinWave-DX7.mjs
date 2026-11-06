@@ -59,16 +59,19 @@ if (wasmAt >= 0) {
 const raw = new Uint8Array(128 * 128);
 voices.forEach((v, i) => raw.set(pack(expand(v)), i * 128));
 for (const x of raw) if (x > 127) throw new Error('VMEM byte out of range');
-// Same lossless VMEM encoding as tools/Generate-Factory-DX7.mjs.
+// Same lossless LZ as tools/Generate-Factory-DX7.mjs, applied to the bank
+// transposed (byte k of every voice together); app/fm_factory.c undoes it.
+const stream = new Uint8Array(raw.length);
+for (let i = 0; i < raw.length; ++i) stream[i] = raw[((i & 127) << 7) | (i >> 7)];
 const packed = [];
-for (let i = 0; i < raw.length;) {
+for (let i = 0; i < stream.length;) {
   let length = 2, distance = 0;
   for (let j = Math.max(0, i - 16383); j < i; j++) {
-    let n = 0; while (n < 130 && i + n < raw.length && raw[j + n] === raw[i + n]) n++;
+    let n = 0; while (n < 130 && i + n < stream.length && stream[j + n] === stream[i + n]) n++;
     if (n > length) { length = n; distance = i - j; }
   }
   if (distance) { packed.push(128 + length - 3, (distance & 127) | (distance >= 128 ? 128 : 0)); if (distance >= 128) packed.push(distance >> 7); i += length; }
-  else packed.push(raw[i++]);
+  else packed.push(stream[i++]);
 }
 const decoded = [];
 for (let i = 0; i < packed.length;) {
@@ -76,12 +79,12 @@ for (let i = 0; i < packed.length;) {
   if (t < 128) decoded.push(t);
   else { const n = t - 128 + 3, lo = packed[i++], d = (lo & 127) | (lo >= 128 ? packed[i++] << 7 : 0); for (let k = 0; k < n; k++) decoded.push(decoded[decoded.length - d]); }
 }
-if (Buffer.compare(Buffer.from(decoded), Buffer.from(raw))) throw new Error('encoding round trip failed');
+if (Buffer.compare(Buffer.from(decoded), Buffer.from(stream))) throw new Error('encoding round trip failed');
 const sha = crypto.createHash('sha256').update(raw).digest('hex');
 const lines = []; for (let i = 0; i < packed.length; i += 24) lines.push('    ' + packed.slice(i, i + 24).join(',') + ',');
 const names = voices.map((v, i) => ` * ${String(i + 1).padStart(3)} ${v.name}`).join('\n');
 const content = '/* SPDX-License-Identifier: GPL-3.0-only WITH GPL-3.0-linking-exception\n' +
-  ' * PumpkinWave 666 factory DX7 bank: 103 haunted voices + 25 USER slots.\n' +
+  ' * PumpkinWave 666 factory DX7 bank: 103 haunted voices + 25 USER slots,\n * LZ-packed in byte-column order (see app/fm_factory.c).\n' +
   ' * Original programming. Regenerate: node tools/Generate-PumpkinWave-DX7.mjs --normalize build/web/simulator.wasm\n' +
   ' * VMEM SHA-256: ' + sha + '\n *\n' + names + '\n */\n' +
   'static const uint8_t factory_packed[] = {\n' + lines.join('\n') + '\n};\n';

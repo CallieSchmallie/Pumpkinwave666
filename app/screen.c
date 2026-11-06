@@ -1569,15 +1569,6 @@ static void draw_page(const struct fm1_ble_status *ble)
 {
     draw_page_body(ble);
     if (boot_active || (paint_rendering && paint_top >= 30)) return;
-    {
-        unsigned shown = glo_down && glo_used ? MIX : page, level = 0, playing = 0;
-        for (unsigned t = 0; t < GROOVE_TRACKS; ++t) {
-            if (frame_views[t].audible && frame_views[t].level > level) level = frame_views[t].level;
-            playing |= frame_views[t].playing;
-        }
-        if (shown != PRESET_BROWSER && shown != PROJECT && shown != BLE)
-            mini_pumpkin(65, 9, level, frame_time, playing);
-    }
     uint32_t since = 0;
     unsigned active = 1;
     if (glo_down && !glo_used) since = glo_ms;
