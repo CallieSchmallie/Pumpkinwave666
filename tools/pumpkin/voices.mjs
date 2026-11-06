@@ -493,6 +493,9 @@ export const FACTORY = V;
 export const USER_SLOTS = 128 - V.length;
 /** Blank USER voice: a single soft sine, easy to start sculpting from. */
 export function userVoice(n) {
+  // Unused operators are all-zero so the firmware can rebuild these slots
+  // from OP1 and the global bytes alone (see app/fm_factory.c).
+  const zero = { r: 0.5, l: 0, rt: [0, 0, 0, 0], lv: [0, 0, 0, 0], det: -7, kvs: 0, bp: 0 };
   return { name: 'USER ' + String(n).padStart(2, '0'), alg: 1, fb: 0, user: true,
-    ops: [ { r: 1, l: 90, rt: [95, 40, 50, 50], lv: [99, 90, 86, 0], kvs: 2 }, { r: 1, l: 0 }, { r: 1, l: 0 }, { r: 1, l: 0 }, { r: 1, l: 0 }, { r: 1, l: 0 } ] };
+    ops: [ { r: 1, l: 90, rt: [95, 40, 50, 50], lv: [99, 90, 86, 0], kvs: 2 }, zero, zero, zero, zero, zero ] };
 }

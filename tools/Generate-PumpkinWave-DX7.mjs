@@ -61,8 +61,17 @@ voices.forEach((v, i) => raw.set(pack(expand(v)), i * 128));
 for (const x of raw) if (x > 127) throw new Error('VMEM byte out of range');
 // Same lossless LZ as tools/Generate-Factory-DX7.mjs, applied to the bank
 // transposed (byte k of every voice together); app/fm_factory.c undoes it.
-const stream = new Uint8Array(raw.length);
-for (let i = 0; i < raw.length; ++i) stream[i] = raw[((i & 127) << 7) | (i >> 7)];
+// Only the factory voices are stored; the USER slots are rebuilt from a tiny
+// template, which must match userVoice() byte for byte.
+const F = FACTORY.length, stream = new Uint8Array(F * 128);
+for (let i = 0; i < stream.length; ++i) stream[i] = raw[(i % F) * 128 + Math.floor(i / F)];
+const tpl = raw.slice(F * 128 + 85, F * 128 + 128);
+for (let n = 0; n < USER_SLOTS; ++n) {
+  const v = raw.slice((F + n) * 128, (F + n + 1) * 128);
+  for (let k = 0; k < 85; ++k) if (v[k]) throw new Error('USER voice operators 2-6 must be zero');
+  const t = Buffer.from(tpl); t.write(String(n + 1).padStart(2, '0'), 38, 'latin1');
+  if (Buffer.compare(Buffer.from(v.slice(85)), t)) throw new Error('USER voice does not match the template');
+}
 const packed = [];
 for (let i = 0; i < stream.length;) {
   let length = 2, distance = 0;
@@ -87,6 +96,9 @@ const content = '/* SPDX-License-Identifier: GPL-3.0-only WITH GPL-3.0-linking-e
   ' * PumpkinWave 666 factory DX7 bank: 103 haunted voices + 25 USER slots,\n * LZ-packed in byte-column order (see app/fm_factory.c).\n' +
   ' * Original programming. Regenerate: node tools/Generate-PumpkinWave-DX7.mjs --normalize build/web/simulator.wasm\n' +
   ' * VMEM SHA-256: ' + sha + '\n *\n' + names + '\n */\n' +
+  `enum { FACTORY_VOICES = ${F} };\n` +
+  '/* USER slot bytes 85..127 (OP1 and globals); the name digits are filled in. */\n' +
+  'static const uint8_t user_template[43] = {' + Array.from(tpl).join(',') + '};\n' +
   'static const uint8_t factory_packed[] = {\n' + lines.join('\n') + '\n};\n';
 fs.writeFileSync(new URL('../app/fm_factory.inc', import.meta.url), content);
 fs.writeFileSync(new URL('../presets/PumpkinWave666-ALL.vmem', import.meta.url), raw);

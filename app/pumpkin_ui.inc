@@ -30,11 +30,11 @@ static const int8_t haunt_tunings[HAUNT_TUNINGS][12] = {
 /* Every name list is fixed-width so one table serves labels and values. */
 static const char haunt_words[][9] = {
     "WOW", "FLUTTER", "DRIFT", "WAVE", "HAUNT", "LINGER", "VEIL", "SWOOP",
-    "POSSESS", "ROT", "TUNING", "MUTATE", "SLOT", "ACTION", "", "",
+    "POSSESS", "TUNING", "MUTATE", "", "SLOT", "ACTION", "", "",
     "TRI", "SAWDN", "SAWUP", "SQR", "SINE", "S/H",
     "12-TET", "HAUNTED", "DROWNED", "MOONSICK", "WEREWOLF", "SEPTIMAL",
-    "STORE", "LOAD", "EXORCISE", "WARBLE", "GHOST", "CURSE", "VAULT"};
-enum { W_WAVES = 16, W_TUNINGS = 22, W_ACTIONS = 28, W_PAGES = 31 };
+    "STORE", "EXORCISE", "WARBLE", "GHOST", "CURSE", "VAULT"};
+enum { W_WAVES = 16, W_TUNINGS = 22, W_ACTIONS = 28, W_PAGES = 30 };
 static unsigned haunt_page, haunt_slot, haunt_action, haunt_confirm, haunt_mutations;
 static uint8_t haunt_tune[GROOVE_TRACKS];
 static uint8_t haunt_snapshot[156];
@@ -115,7 +115,6 @@ static __attribute__((noinline, cold, minsize)) void pumpkin_boot_draw(void)
         paint_fill(0, 0, 240, 240, BACK);
         text(54, 124, "PUMPKINWAVE", 2, ACCENT, BACK);
         text(51, 180, "HAUNTED FM FOR THE FM-1", 1, DIM, BACK);
-        text(36, 222, "V1.0 - BUILT ON FM1 OPEN " FM1_RELEASE_VERSION, 1, PANEL | 0x4208, BACK);
     }
     cache->title_cache = sig;
     big_pumpkin(72, 40, boot_phase >= 6, glow);
@@ -132,12 +131,10 @@ static unsigned op_base(unsigned n) { return (5U - n) * 21U; } /* n = 0 for OP1 
  * groove_fm_edit clamps to the parameter's own range. */
 static void fm_set(uint8_t *p, unsigned parameter, int value)
 {
-    if (value < 0) value = 0;
-    if (value != p[parameter]) {
-        groove_fm_edit(track, parameter, value - (int)p[parameter]);
-        uint8_t q[156];
-        if (!groove_fm_copy(track, q, NULL)) p[parameter] = q[parameter];
-    }
+    int high = parameter == 134 ? 31 : parameter == 135 || parameter == 143 ? 7 : parameter == 142 ? 5
+             : parameter < 126 && parameter % 21U == 20 ? 14 : 99;
+    value = clamp(value, 0, high);
+    if (value != p[parameter]) { groove_fm_edit(track, parameter, value - (int)p[parameter]); p[parameter] = (uint8_t)value; }
 }
 /* Mean of one operator field over carriers (want=1) or modulators (want=0). */
 static int op_mean(const uint8_t *p, unsigned field, unsigned want)
@@ -221,18 +218,14 @@ static void haunt_controls(const struct fm1_controls *controls, uint32_t pressed
             break;
         }
         case 8: fm_set(p, 135, p[135] + step); break;            /* POSSESS: feedback */
-        case 9:                                                   /* ROT: inharmonic modulators */
-            for (unsigned n = 0; n < 6; ++n)
-                if (!((car >> n) & 1U) && !p[op_base(n) + 17]) fm_set(p, op_base(n) + 19, p[op_base(n) + 19] + 2 * d + (int)(n & 1U));
-            break;
-        case 10: {                                                /* TUNING */
+        case 9: {                                                 /* TUNING */
             haunt_tune[track] = (uint8_t)clamp(haunt_tune[track] + step, 0, HAUNT_TUNINGS - 1);
             struct groove_tuning t;
             memcpy(t.main, haunt_tunings[haunt_tune[track]], 12); memcpy(t.alt, t.main, 12);
             groove_tuning_set(track, &t);
             break;
         }
-        case 11: {                                                /* MUTATE: CW mild, CCW wild */
+        case 10: {                                                /* MUTATE: CW mild, CCW wild */
             unsigned chaos = step > 0 ? 3 : 9;
             for (unsigned i = 0; i < 2U + chaos / 2U; ++i) {
                 uint32_t r = haunt_seed ^= haunt_seed << 13, b = op_base((r >> 3) % 6U);
@@ -243,12 +236,11 @@ static void haunt_controls(const struct fm1_controls *controls, uint32_t pressed
                 if (what < 8) fm_set(p, b + field[what], p[b + field[what]] + swing * (field[what] == 20 ? 1 : 3));
                 else fm_set(p, what == 8 ? 135U : 137U, p[what == 8 ? 135 : 137] + (what == 8 ? step : swing * 3));
             }
-            if (chaos > 3 && (haunt_seed & 7U) == 0) fm_set(p, 134, (int)(haunt_seed >> 8) % 32);
             ++haunt_mutations;
             break;
         }
         case 12: haunt_slot = (unsigned)clamp((int)haunt_slot + step, 0, HAUNT_USER_SLOTS - 1); haunt_confirm = 0; break;
-        case 13: haunt_action = (unsigned)clamp((int)haunt_action + step, 0, 2); haunt_confirm = 0; break;
+        case 13: haunt_action = step > 0; haunt_confirm = 0; break;
         }
     }
     if (haunt_page == HP_VAULT && (pressed & BUTTON(SAVE))) {
@@ -263,9 +255,6 @@ static void haunt_controls(const struct fm1_controls *controls, uint32_t pressed
             }
             r = haunt_store(haunt_slot);
             notice = r ? "VAULT WRITE FAILED" : "SOUL STORED IN THE VAULT";
-        } else if (haunt_action == 1) {
-            r = groove_fm_import(track, q);
-            notice = r ? "LOAD FAILED" : "SOUL SUMMONED FROM THE VAULT";
         } else {
             r = haunt_snapshot_track == track ? groove_fm_import(track, haunt_snapshot) : -1;
             notice = r ? "NOTHING TO EXORCISE HERE" : "EXORCISED - VOICE RESTORED";
@@ -289,9 +278,8 @@ static int haunt_value(const uint8_t *p, unsigned c, char out[12])
     case 6: v = 99 - op_mean(p, 16, 0); break;
     case 7: v = 50 - (int)p[133]; decimal(out, v, 1); return (v < 0 ? -v : v) * 3;
     case 8: v = p[135]; decimal(out, v, 1); return v * 14;
-    case 9: v = op_mean(p, 19, 0); break;
-    case 10: v = haunt_tune[track]; word = haunt_words[W_TUNINGS + v]; v *= 19; break;
-    case 11: decimal(out, (int)haunt_mutations, 1); strcat(out, "X"); return (int)(haunt_mutations * 9U % 100U);
+    case 9: v = haunt_tune[track]; word = haunt_words[W_TUNINGS + v]; v *= 19; break;
+    case 10: decimal(out, (int)haunt_mutations, 1); strcat(out, "X"); return (int)(haunt_mutations * 9U % 100U);
     case 12: v = (int)haunt_slot * 4; out[0] = 'U'; decimal(out + 1, (int)haunt_slot + 1, 2); return v;
     case 13: v = (int)haunt_action * 49; word = haunt_words[W_ACTIONS + haunt_action]; break;
     default: out[0] = 0; return -1;
@@ -342,15 +330,12 @@ static __attribute__((noinline)) void haunt_draw(void)
             unsigned speed = 1U + p[137] / 6U;
             for (unsigned i = 0; i < 220; ++i) {
                 unsigned ph = (now / 33U * speed * 3U + i * speed) & 255U;
-                int s = p[142] % 6U == 3 ? (ph < 128 ? 120 : -120) : ph < 128 ? (int)ph * 2 - 128 : 383 - (int)ph * 2;
+                int s = ph < 128 ? (int)ph * 2 - 128 : 383 - (int)ph * 2;
                 int y = 157 - s * depth / 128;
                 line((int)(10 + i), py, (int)(10 + i), y, GREEN);
                 py = y;
             }
-        } else if (haunt_page != HP_VAULT) {
-            text(16, 146, haunt_page == HP_GHOST ? "FADE IN, LINGER, VEIL, SWOOP" : "FEEDBACK, ROT, TUNING, MUTATE", 1, DIM, BACK);
-            text(16, 162, haunt_page == HP_GHOST ? "ALL OPERATORS, ONE TURN" : "K4 RIGHT MILD, LEFT WILD", 1, DIM, BACK);
-        } else {
+        } else if (haunt_page == HP_VAULT) {
             uint8_t q[156];
             groove_fm_program(q, HAUNT_FIRST_USER + haunt_slot);
             q[155] = 0;
