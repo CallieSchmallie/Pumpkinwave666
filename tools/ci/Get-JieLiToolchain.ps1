@@ -56,6 +56,8 @@ if ($LASTEXITCODE) { throw 'JieLi installer download failed (the host may block 
 
 if ($sevenZip) {
     $out = Join-Path $work 'unpacked'
+    Write-Host '--- installer contents (7-Zip) ---'
+    & $sevenZip l $installer | Select-Object -First 60 | ForEach-Object { Write-Host $_ }
     & $sevenZip x -y "-o$out" $installer | Out-Null
     $found = Find-Pi32 @($out)
     if (!$found) {
@@ -73,8 +75,9 @@ $target = 'C:\JL'
 foreach ($switches in @(@('/S', "/D=$target"), @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/DIR=$target"))) {
     Write-Host "Running installer silently: $($switches -join ' ')"
     $p = Start-Process -FilePath $installer -ArgumentList $switches -PassThru
-    if (!$p.WaitForExit(900000)) { $p.Kill(); Write-Host 'Installer timed out.'; continue }
-    $found = Find-Pi32 @($target, 'C:\JL', "$env:ProgramFiles", "${env:ProgramFiles(x86)}", "$env:LOCALAPPDATA")
+    # An installer that ignores silent switches waits for clicks forever: give up quickly.
+    if (!$p.WaitForExit(240000)) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; Write-Host 'Installer did not finish unattended.'; continue }
+    $found = Find-Pi32 @($target, 'C:\JL\pi32')
     if ($found) { Use-Pi32 $found }
 }
 throw 'Could not obtain JieLi toolchain 2.5.3 unattended. Install it on a Windows PC, zip C:\JL\pi32, host the zip and set the JIELI_TOOLCHAIN_URL repository variable.'

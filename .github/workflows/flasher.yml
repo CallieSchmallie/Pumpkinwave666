@@ -38,11 +38,13 @@ jobs:
     name: FM-1 firmware (JieLi toolchain)
     runs-on: windows-latest
     continue-on-error: true
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - name: JieLi toolchain 2.5.3
+        timeout-minutes: 15
         shell: pwsh
         env:
           JIELI_TOOLCHAIN_URL: ${{ vars.JIELI_TOOLCHAIN_URL }}
