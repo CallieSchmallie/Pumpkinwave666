@@ -45,10 +45,11 @@ static unsigned haunt_names_slot = ~0U;
 
 /* ---------- palette ---------- */
 static uint16_t art_palette[16] = {
-    0x0000, 0x3060, 0xd2e0, 0xf483, 0x91a0, 0x3bc4, 0xfe25, 0xffd7,
-    0x2840, 0xef19, 0xd842, 0xab1f, 0x1844, 0xfa80, 0x5d45, 0x0000};
-static const uint16_t glow_g[8] = {0x9140, 0xa201, 0xb2c2, 0xc383, 0xd443, 0xdd04, 0xedc5, 0xfe86};
-static const uint16_t glow_y[8] = {0xc362, 0xcc05, 0xd4a8, 0xdd4b, 0xe5ee, 0xee91, 0xf734, 0xffd7};
+    0x0000, 0x3060, 0xd2e0, 0xf483, 0x91a0, 0x3bc4, 0x3e25, 0xdff7,
+    0x0820, 0xef19, 0xd842, 0xab1f, 0x1844, 0x2fe7, 0x5d45, 0x0000};
+/* Witch-light: the carved face and every candle burn green. */
+static const uint16_t glow_g[8] = {0x0a21, 0x12e2, 0x23c3, 0x2c83, 0x3544, 0x3e25, 0x4ee5, 0x57c6};
+static const uint16_t glow_y[8] = {0x3ca5, 0x5527, 0x6d8a, 0x860d, 0x968f, 0xaf12, 0xc774, 0xdff7};
 static __attribute__((noinline)) unsigned candle_flicker(uint32_t now, unsigned salt)
 {
     /* Deterministic candle noise: never fully dark, occasionally flaring. */
@@ -61,7 +62,7 @@ static void glow_set(unsigned level)
     if (level > 7) level = 7;
     art_palette[6] = glow_g[level];
     art_palette[7] = glow_y[level];
-    art_palette[13] = level > 5 ? 0xfd20 : 0xfa80;
+    art_palette[13] = level > 5 ? 0x2fe7 : 0x1625;
 }
 /* Indexed 4-bit sprite. Index 0 is transparent; everything else uses pal. */
 static __attribute__((noinline)) void sprite(unsigned x, unsigned y, const uint8_t *art, unsigned w, unsigned h,
@@ -119,7 +120,9 @@ static void big_pumpkin(unsigned x, unsigned y, unsigned scale, unsigned face, u
     glow_set(glow);
     sprite(x, y, art_pumpkin, ART_PUMPKIN_W, ART_PUMPKIN_H, scale, art_palette);
     static const uint8_t *const faces[3] = {art_face_calm, art_face_evil, art_face_possessed};
-    sprite(x, y, faces[face % 3], ART_FACE_EVIL_W, ART_FACE_EVIL_H, scale, art_palette);
+    uint16_t pal[16]; memcpy(pal, art_palette, sizeof pal);
+    pal[9] = 0xdffa; /* white-hot green pupils */
+    sprite(x, y, faces[face % 3], ART_FACE_EVIL_W, ART_FACE_EVIL_H, scale, pal);
 }
 
 /* ---------- boot splash ---------- */

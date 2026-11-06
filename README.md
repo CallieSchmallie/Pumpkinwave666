@@ -5,13 +5,14 @@ open-source firmware (**FM1 Open V14**) and keeps everything that firmware does:
 the 8-track, 64-step sequencer, the six engines (DX7, 303, 808, PSG, pluck and
 sampler), MIDI, Bluetooth and the workbench. It adds:
 
-* **Jack-o'-lantern UI.** A boot splash with a flickering pumpkin, bats and candles
+* **Jack-o'-lantern UI.** A boot splash with an evil, flickering pumpkin whose carved eyes,
+  nose and fanged grin burn with green candlelight, bats and candles
   that light up one by one. The palette is midnight purple, pumpkin orange,
   slime green and candlelight. The tracks are little pumpkins, and a header
   pumpkin glows with the output level.
-* **103 haunted DX7 presets plus 25 empty USER slots** (128 programs). The
-  sounds draw on 70s, 80s and 90s horror: warbly tape, dramatic organs and
-  ghostly noises. Every voice is original programming and was
+* **103 haunted and sci-fi DX7 presets plus 25 empty USER slots** (128 programs). The
+  sounds draw on 70s, 80s and 90s horror and science fiction: warbly tape, dramatic organs,
+  ghostly noises, flying saucers and mainframes. Every voice is original programming and was
   level-matched by auditioning it in the engine.
 * **HAUNT LAB**, a sound-design page with 5 pages of macros. Each macro edits
   the real DX7 voice parameters. It also has 9 alternative tunings and an
@@ -27,6 +28,21 @@ sampler), MIDI, Bluetooth and the workbench. It adds:
 > headers, and every engine symbol it calls is in `sdk/lib/libfm1_engine.a`.
 > Keep M-VAVE's stock **FM-1 V15** firmware ready (m-vave.com/download).
 > The workbench can always return to it.
+
+## Web flasher on GitHub Pages
+`.github/workflows/flasher.yml` builds everything on every push to `main`:
+* **preview** (Ubuntu): the WebAssembly simulator, plus a check that the preset bank regenerates byte-for-byte.
+* **firmware** (Windows): fetches JieLi toolchain 2.5.3 (`tools/ci/Get-JieLiToolchain.ps1`), runs
+  `sdk/Build.ps1 -Package` and skins the resulting workbench. The workbench is the flasher: its
+  **Device update** tab writes PumpkinWave over Web MIDI and carries stock V15 for rollback.
+* **deploy**: publishes `site/index.html` (landing page), `flasher.html`, `preview.html`, the
+  `.fwsc`, the SysEx banks and `SHA256SUMS.txt` to GitHub Pages.
+
+One-time setup: **Settings → Pages → Source: GitHub Actions**. If the runner can't unpack JieLi's
+installer unattended, the firmware job fails and the site deploys with the preview only. In that
+case, zip an installed `C:\JL\pi32`, host it, and set the repository variable
+`JIELI_TOOLCHAIN_URL` to the zip's URL. `sdk/Build.ps1` checks every toolchain file's
+SHA-256 either way.
 
 ## Try it without hardware
 
@@ -63,7 +79,8 @@ The screen under the candles shows the live pitch warble (WARBLE), the volume
 envelope and pitch swoop (GHOST), the six operators' levels and ratios (CURSE),
 the cents deviation per key (TUNING) or the user slots (VAULT). The big
 pumpkin's face turns from calm to evil to possessed as the voice gets more
-cursed (feedback, warble, drift, modulation). Its glow follows the output level.
+cursed (feedback, warble, drift, modulation): sinister, then evil, then possessed with white-hot
+pupils. Its green candle glow follows the output level, and the candles burn green too.
 
 **VAULT.** STORE writes the track's current DX7 voice into a user slot of the
 independent DX7 library. Overwriting a used slot asks for a second SAVE.
@@ -87,21 +104,22 @@ the engine's per-track tuning API, so they are saved with projects.
 | 67-80 | 80s horror synth: stalker basses, drones, brass, strings, stabs, sub basses |
 | 81-91 | 90s dark: X-style whistle, dark ambient, industrial clang, PS1-era fog and choirs |
 | 92-103 | Haunted FX: thunder, creaking door, heartbeat, bats, cauldron, raven, siren, ghost train |
+| sci-fi | 6 MOTHERSHIP, 9 MAINFRAME, 18 STARFIELD, 19 CRYOSLEEP, 21 SONAR PING, 22 TRACTORBEM, 24 WARP DRIVE, 31 ORBITALPAD, 35 UFO WOBBLE, 36 ALIENSIGNL, 51 ANDROIDVOX, 72 PLASMABASS, 75 QUASARBELL, 84 CIRCUITRY, 88 LASER ZAP. These replaced near-duplicates found by audio fingerprinting (log spectra and loudness envelopes of every voice); no two presets now sit closer than 0.91 on that scale, where the closest pair used to be 0.48 |
 | 104-128 | USER 01-25: blank sine voices for your own sounds (VAULT, or the workbench DX7 library) |
 
 <details><summary>Full list</summary>
 
 | # | Bank | Name |
 |---|---|---|
-| 1 | A01 | CRYPTORGAN |
+| 1 | A01 | YPTORGAN |
 | 2 | A02 | PHANTOMPIP |
 | 3 | A03 | TOCCATA666 |
 | 4 | A04 | BLOOD MASS |
 | 5 | A05 | HAUNTMANOR |
-| 6 | A06 | FUNERALHOM |
+| 6 | A06 | MOTHERSHIP |
 | 7 | A07 | GOTHICREED |
 | 8 | A08 | CALLIOPE X |
-| 9 | A09 | CREEPCARNI |
+| 9 | A09 | MAINFRAME |
 | 10 | A10 | DRACULADEN |
 | 11 | A11 | SEANCEHARM |
 | 12 | A12 | WEREWOLFB3 |
@@ -110,25 +128,25 @@ the engine's per-track tuning API, so they are saved with projects.
 | 15 | A15 | MAUSOLEUM |
 | 16 | A16 | VHSSTRINGS |
 | 17 | A17 | WOBBLETAPE |
-| 18 | A18 | SEASICK EP |
-| 19 | A19 | MELTCHOIR |
+| 18 | A18 | STARFIELD |
+| 19 | A19 | CRYOSLEEP |
 | 20 | A20 | WARPED BOX |
-| 21 | A21 | DROWNPIANO |
-| 22 | A22 | VCR GHOST |
+| 21 | A21 | SONAR PING |
+| 22 | A22 | TRACTORBEM |
 | 23 | A23 | WOW&FLUTTR |
-| 24 | A24 | BROKENDECK |
+| 24 | A24 | WARP DRIVE |
 | 25 | A25 | LULLABYROT |
 | 26 | A26 | SLASHERPNO |
 | 27 | A27 | MIDNIGHTPL |
 | 28 | A28 | GIALLOLEAD |
 | 29 | A29 | SINKINGLED |
 | 30 | A30 | MOONWARBLE |
-| 31 | A31 | SEANCESTRG |
+| 31 | A31 | ORBITALPAD |
 | 32 | A32 | ETHER WOW |
 | 33 | B01 | LOST VHS |
 | 34 | B02 | THEREMIN |
-| 35 | B03 | AETHERWAVE |
-| 36 | B04 | SAUCER MAN |
+| 35 | B03 | UFO WOBBLE |
+| 36 | B04 | ALIENSIGNL |
 | 37 | B05 | BANSHEE |
 | 38 | B06 | GHOSTCHOIR |
 | 39 | B07 | SPECTREVOX |
@@ -143,7 +161,7 @@ the engine's per-track tuning API, so they are saved with projects.
 | 48 | B16 | WILLOWISP |
 | 49 | B17 | GRAVEMIST |
 | 50 | B18 | BEYONDVEIL |
-| 51 | B19 | LOST SOUL |
+| 51 | B19 | ANDROIDVOX |
 | 52 | B20 | SHADOW PAD |
 | 53 | B21 | TUBULARDOM |
 | 54 | B22 | DIRGE BELL |
@@ -164,10 +182,10 @@ the engine's per-track tuning API, so they are saved with projects.
 | 69 | C05 | PROPHDOOM |
 | 70 | C06 | NIGHTSTALK |
 | 71 | C07 | FOG SYNTH |
-| 72 | C08 | DARK SEQ |
+| 72 | C08 | PLASMABASS |
 | 73 | C09 | BLOODBRASS |
 | 74 | C10 | OMINOUSWLL |
-| 75 | C11 | VAMPSTRING |
+| 75 | C11 | QUASARBELL |
 | 76 | C12 | ZOMBIEBASS |
 | 77 | C13 | SPLATRSTAB |
 | 78 | C14 | NOSFERASUB |
@@ -176,11 +194,11 @@ the engine's per-track tuning API, so they are saved with projects.
 | 81 | C17 | SKEPTICWHS |
 | 82 | C18 | DARKAMBNT |
 | 83 | C19 | INDUSCLANG |
-| 84 | C20 | NOIR KEYS |
+| 84 | C20 | CIRCUITRY |
 | 85 | C21 | PSX FOG |
 | 86 | C22 | PSX CHOIR |
 | 87 | C23 | METALSCRAP |
-| 88 | C24 | RESIDENTBR |
+| 88 | C24 | LASER ZAP |
 | 89 | C25 | CYBERGHOST |
 | 90 | C26 | VOID DRONE |
 | 91 | C27 | SANITARIUM |
@@ -196,7 +214,6 @@ the engine's per-track tuning API, so they are saved with projects.
 | 101 | D05 | GHOSTTRAIN |
 | 102 | D06 | SPOOKY WOO |
 | 103 | D07 | CRYPT SLAM |
-
 </details>
 
 The bank is also in `presets/` as four standard 32-voice DX7 SysEx files
@@ -252,6 +269,7 @@ FM1_WASI_SDK=/path/to/wasi-sdk-27.0-x86_64-linux ./tools/build-web.sh   # -> bui
   overview badges and a longer boot.
 * `app/fm_factory.inc`: the PumpkinWave 128-voice bank in place of the V15 factory bank.
 * `app/presets.c`: 16 haunted demo projects that use bank programs; old recipe voices removed.
+* `.github/workflows/flasher.yml`, `tools/ci/`, `site/`: CI firmware build and GitHub Pages flasher.
 * `tools/`: generators, Linux web build, headless simulator tools and the workbench skin.
 * `sdk/` is unchanged.
 

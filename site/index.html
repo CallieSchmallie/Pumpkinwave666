@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PumpkinWave 666 - FM-1 flasher</title>
+<link rel="icon" href="screens/boot.png">
+<style>
+:root{--bg:#0c0611;--panel:#170c20;--line:#3d2650;--text:#f3e7d8;--muted:#b49cc2;--orange:#ff8a1a;--green:#5cff3a;--blood:#e0283a}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% -10%,#3a1450 0%,#1a0a24 40%,transparent 72%),var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+main{max-width:980px;margin:auto;padding:40px 24px 64px}
+.mono{font-family:ui-monospace,Consolas,"Liberation Mono",monospace}
+header{display:grid;grid-template-columns:240px 1fr;gap:32px;align-items:center}
+header img{width:240px;height:240px;image-rendering:pixelated;border:2px solid #000;border-radius:10px;box-shadow:0 0 0 1px var(--line),0 0 60px #3cff2a22,0 20px 40px #0008}
+h1{font-size:44px;line-height:1.05;margin:0 0 6px;letter-spacing:-.03em}
+h1 span{color:var(--blood)}
+.tag{color:var(--muted);margin:0 0 20px}
+.actions{display:flex;flex-wrap:wrap;gap:12px}
+a.btn{display:inline-block;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:650;border:1px solid var(--line);color:var(--text);background:#22112d}
+a.btn:hover{border-color:var(--orange)}
+a.btn.primary{background:var(--orange);color:#2b0d00;border-color:var(--orange)}
+a.btn.disabled{opacity:.45;pointer-events:none}
+.status{margin-top:14px;font-size:13px;color:var(--muted)}
+.status b{color:var(--green)}
+section{margin-top:36px;padding:24px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+h2{margin:0 0 12px;font-size:22px}
+ol,ul{padding-left:22px;margin:0}li{margin:8px 0}
+.warn{border-color:#6a2a1a;background:#24100f}
+.warn h2{color:#ffb070}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.grid img{width:100%;image-rendering:pixelated;border-radius:6px;border:1px solid #000}
+section a{color:var(--orange)}
+code{background:#0e0714;padding:2px 6px;border-radius:4px;font-size:14px}
+footer{margin-top:36px;color:var(--muted);font-size:13px}
+footer a{color:var(--muted)}
+@media(max-width:720px){header{grid-template-columns:1fr;text-align:center}header img{margin:auto;width:200px;height:200px}.actions{justify-content:center}.grid{grid-template-columns:repeat(2,1fr)}h1{font-size:34px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <img src="screens/boot.png" alt="PumpkinWave 666 boot screen: an evil jack-o'-lantern with green candle glow">
+  <div>
+    <h1>PumpkinWave <span>666</span></h1>
+    <p class="tag">Haunted firmware for the M-VAVE FM-1: 103 horror and sci-fi DX7 voices, 25 user slots, the HAUNT LAB sound designer and a jack-o'-lantern UI. Built on M-VAVE's FM1 Open V14.</p>
+    <div class="actions">
+      <a id="flash" class="btn primary disabled" href="flasher.html">Open the flasher</a>
+      <a class="btn" href="preview.html">Play it in the browser</a>
+    </div>
+    <p id="status" class="status mono">Checking build...</p>
+  </div>
+</header>
+
+<section>
+  <h2>Flash your FM-1</h2>
+  <ol>
+    <li>Use <b>desktop Chrome or Edge</b>. The flasher talks to the FM-1 over Web MIDI, so phones and Safari or Firefox won't work.</li>
+    <li>Connect the FM-1 by USB-C and switch it on. A charged battery is safest.</li>
+    <li>Open the flasher, go to <b>Projects &amp; sounds</b> and <b>back up your projects, DX7 voices and samples</b>. Switching firmware does not convert their formats.</li>
+    <li>Go to <b>Device update</b> and select <b>Connect device</b>, then allow MIDI and SysEx when the browser asks.</li>
+    <li>Start the update. Keep the cable connected and the page open until it reports success.</li>
+    <li>When it restarts, the green-eyed pumpkin should greet you. Press <b>SEL</b> on a DX7 track to open HAUNT LAB.</li>
+  </ol>
+</section>
+
+<section class="warn">
+  <h2>Unofficial firmware: read before flashing</h2>
+  <ul>
+    <li>PumpkinWave 666 is not made or supported by M-VAVE. You flash it at your own risk.</li>
+    <li>The flasher page also contains M-VAVE's original <b>V15</b> firmware, so you can return to stock from the same Device update page. M-VAVE's download page has it too.</li>
+    <li>Each build is compiled by this repository's GitHub Actions from the public source. The SHA-256 is shown above and in <a href="SHA256SUMS.txt">SHA256SUMS.txt</a>.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Screens</h2>
+  <div class="grid">
+    <img src="screens/overview.png" alt="Track overview with pumpkin track badges">
+    <img src="screens/haunt-warble.png" alt="HAUNT LAB warble page">
+    <img src="screens/haunt-curse.png" alt="HAUNT LAB curse page">
+    <img src="screens/haunt-vault.png" alt="HAUNT LAB vault page">
+  </div>
+</section>
+
+<section class="downloads">
+  <h2>Downloads</h2>
+  <ul>
+    <li id="fwsc-row"><a href="downloads/PumpkinWave666.fwsc">PumpkinWave666.fwsc</a>: the raw firmware package (the flasher already includes it)</li>
+    <li>DX7 SysEx banks, which also load on stock FM-1 firmware, FM1 Open or Dexed:
+      <a href="downloads/PumpkinWave666-BankA.syx">A</a> ·
+      <a href="downloads/PumpkinWave666-BankB.syx">B</a> ·
+      <a href="downloads/PumpkinWave666-BankC.syx">C</a> ·
+      <a href="downloads/PumpkinWave666-BankD.syx">D</a> ·
+      <a href="downloads/PRESETS.txt">preset list</a></li>
+    <li><a href="SHA256SUMS.txt">SHA256SUMS.txt</a></li>
+    <li><a id="source" href="#">Source code</a></li>
+  </ul>
+</section>
+
+<footer>
+  APP code: GPLv3 with the FM1 SDK linking exception. The SDK binaries and the V15 recovery firmware are M-VAVE's, under their terms (see THIRD_PARTY.md in the source). Not affiliated with M-VAVE.
+</footer>
+</main>
+<script>
+(async () => {
+  const status = document.getElementById('status');
+  try {
+    const b = await (await fetch('build.json', { cache: 'no-store' })).json();
+    if (b.repo) document.getElementById('source').href = 'https://github.com/' + b.repo;
+    if (b.flasher) {
+      document.getElementById('flash').classList.remove('disabled');
+      status.innerHTML = '<b>Firmware ready</b> · build ' + b.commit.slice(0, 7) + ' · ' + b.built + '<br>SHA-256 ' + b.firmware_sha256;
+    } else {
+      document.getElementById('fwsc-row').style.display = 'none';
+      status.textContent = 'The firmware build for this commit is not available yet; check the Actions tab. The browser preview works now.';
+    }
+  } catch (e) {
+    status.textContent = 'Build information is unavailable.';
+  }
+})();
+</script>
+</body>
+</html>

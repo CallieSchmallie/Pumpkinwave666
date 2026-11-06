@@ -421,6 +421,74 @@ add('CRYPT SLAM', { alg: 1, fb: 7, trnsp: -24, peg: { rt: [99, 70, 99, 99], lv: 
   ops: [ { r: 0.5, l: 99, rt: [99, 50, 40, 50], lv: [99, 0, 0, 0], kvs: 3 }, { r: 1.41, l: 82, ...E.pluck(70, 50), kvs: 3 },
          { r: 1, l: 94, rt: [99, 44, 40, 50], lv: [99, 0, 0, 0], kvs: 3 }, { r: 1.7, l: 90, ...E.pluck(52, 50) },
          { r: 2.3, l: 88, ...E.pluck(48, 50) }, { r: 3.1, l: 99, ...E.pluck(40, 50) } ] });
+
+// =====================================================================
+// SCI-FI: these replace sounds that rendered as near-duplicates of their
+// neighbours (audio fingerprint distance < 0.9; see tools/pumpkin/README).
+// Each keeps its slot so every other program number stays put.
+// =====================================================================
+const SCIFI = {
+  FUNERALHOM: ['MOTHERSHIP', { alg: 5, fb: 6, trnsp: -12, lfo: lfo('tri', 4, 4, 3, 0, 14),
+    ops: [ { r: 0.5, l: 94, ...E.swell(30, 26), ams: 1 }, { r: 1, l: 70, ...E.swell(30, 26) },
+           { r: 0.75, l: 88, ...E.swell(32, 26), det: 5 }, { r: 1.5, l: 60, ...E.swell(32, 26) },
+           { r: 1, l: 86, ...E.swell(34, 26), det: -5 }, { r: 2.01, l: 55, ...E.swell(34, 26) } ] }],
+  CREEPCARNI: ['MAINFRAME', { alg: 32, fb: 2, lfo: lfo('square', 42, 60, 6),
+    ops: [ { r: 2, l: 96, ...E.organ(70) }, { r: 4, l: 70, ...E.organ(70), det: 2 }, { r: 1, l: 62, ...E.organ(70) }, off, off, off ] }],
+  MELTCHOIR: ['CRYOSLEEP', { alg: 5, fb: 0, lfo: lfo('sine', 18, 5, 3, 0, 10),
+    ops: [ { r: 1, l: 94, ...E.swell(36, 30), ams: 1 }, { r: 3, l: 40, ...E.swell(40, 30) },
+           { r: 3, l: 74, ...E.swell(40, 30), det: 3 }, { r: 7, l: 30, ...E.swell(44, 30) },
+           { r: 1, l: 84, ...E.swell(36, 30), det: -4 }, { r: 1, l: 45, ...E.swell(40, 30) } ] }],
+  DROWNPIANO: ['SONAR PING', { alg: 5, fb: 0, peg: { rt: [40, 99, 99, 99], lv: [50, 50, 50, 52] },
+    ops: [ { r: 1, l: 99, ...E.ring(36, 22, 30, 90), kvs: 2 }, { r: 1, l: 22, ...E.pluck(60, 40) },
+           { r: 2, l: 58, ...E.ring(44, 26, 30, 70), kvs: 2 }, { r: 1, l: 12, ...E.pluck(60, 40) },
+           { r: 1, l: 82, ...E.ring(36, 22, 30, 90), det: 2, kvs: 2 }, off ] }],
+  'VCR GHOST': ['TRACTORBEM', { alg: 2, fb: 5, lfo: lfo('square', 30, 0, 0, 0, 24), peg: { rt: [12, 99, 99, 30], lv: [62, 62, 62, 50] },
+    ops: [ { r: 1, l: 96, ...E.swell(60, 40), ams: 1 }, { r: 1, l: 70, ...E.swell(60, 40) },
+           { r: 2, l: 80, ...E.swell(60, 40), ams: 1 }, { r: 1, l: 60, ...E.swell(60, 40) },
+           { r: 3, l: 50, ...E.swell(60, 40) }, { r: 1, l: 60, ...E.swell(60, 40) } ] }],
+  BROKENDECK: ['WARP DRIVE', { alg: 1, fb: 7, lfo: lfo('tri', 20, 4, 3), peg: { rt: [18, 30, 99, 40], lv: [66, 66, 66, 38] },
+    ops: [ { r: 1, l: 94, ...E.swell(60, 40) }, { r: 2, l: 64, ...E.swell(60, 40) },
+           { r: 1, l: 84, ...E.swell(56, 40), det: 4 }, { r: 2.1, l: 72, ...E.swell(56, 40) },
+           { r: 3.3, l: 70, ...E.swell(56, 40) }, { r: 5.3, l: 82, ...E.organ(40) } ] }],
+  SEANCESTRG: ['ORBITALPAD', { alg: 5, fb: 3, lfo: lfo('tri', 9, 8, 3, 0, 8),
+    ops: [ { r: 1, l: 94, ...E.bloom(40, 26, 88, 30), ams: 1 }, { r: 1.41, l: 46, ...E.bloom(46, 30, 60, 30) },
+           { r: 2, l: 80, ...E.bloom(42, 26, 86, 30), det: 4 }, { r: 2.76, l: 40, ...E.bloom(48, 30, 60, 30) },
+           { r: 0.5, l: 84, ...E.bloom(40, 26, 90, 30), det: -4 }, { r: 1, l: 50, ...E.bloom(44, 30, 60, 30) } ] }],
+  AETHERWAVE: ['UFO WOBBLE', { alg: 32, fb: 3, lfo: lfo('sine', 62, 30, 5),
+    ops: [ { r: 1, l: 98, ...E.swell(70, 44) }, { r: 1.5, l: 72, ...E.swell(70, 44) }, { r: 3, l: 52, ...E.swell(70, 44) }, off, off, off ] }],
+  'SAUCER MAN': ['ALIENSIGNL', { alg: 1, fb: 3, lfo: lfo('square', 55, 34, 5, 0, 26),
+    ops: [ { r: 1, l: 96, ...E.organ(60), ams: 1 }, { r: 3.7, l: 58, ...E.organ(60) },
+           { r: 2, l: 76, ...E.organ(60), ams: 1 }, { r: 5.1, l: 52, ...E.organ(60) }, { r: 1, l: 40, ...E.organ(60) }, { r: 7.3, l: 40, ...E.organ(60) } ] }],
+  'LOST SOUL': ['ANDROIDVOX', { alg: 32, fb: 7, lfo: lfo('sh', 30, 22, 4),
+    ops: [ { r: 1, l: 90, ...E.organ(56) }, { r: 3, l: 76, ...E.organ(56) }, { r: 5, l: 70, ...E.organ(56) },
+           { r: 7, l: 60, ...E.organ(56) }, { r: 2.01, l: 64, ...E.organ(56) }, { r: 1, l: 88, ...E.organ(56) } ] }],
+  'SEASICK EP': ['STARFIELD', { alg: 5, fb: 2, lfo: lfo('sine', 46, 5, 3, 0, 10),
+    ops: [ { r: 1, l: 98, ...E.ring(52, 30, 44, 60), kvs: 3, ams: 1 }, { r: 5, l: 62, ...E.pluck(62, 44), kvs: 4 },
+           { r: 4, l: 80, ...E.ring(56, 32, 44, 50), det: 5, kvs: 3 }, { r: 9.1, l: 44, ...E.pluck(70, 44), kvs: 4 },
+           { r: 8, l: 70, ...E.ring(60, 36, 44, 40), det: -5, kvs: 3, ams: 1 }, { r: 1, l: 30, ...E.pluck(60, 44) } ] }],
+  'DARK SEQ': ['PLASMABASS', { alg: 16, fb: 7, trnsp: -12, peg: { rt: [80, 99, 99, 99], lv: [50, 50, 50, 57] },
+    ops: [ { r: 1, l: 98, ...E.sus(99, 40, 80, 60), kvs: 2 }, { r: 0.5, l: 84, ...E.ring(80, 40, 60, 50), kvs: 3 },
+           { r: 1, l: 76, ...E.ring(70, 40, 60, 50), kvs: 3 }, { r: 2, l: 66, ...E.ring(76, 44, 60, 40) },
+           { r: 1.01, l: 70, ...E.ring(70, 40, 60, 40) }, { r: 1, l: 86, ...E.ring(70, 40, 60, 40) } ] }],
+  VAMPSTRING: ['QUASARBELL', { alg: 5, fb: 0, lfo: lfo('sine', 30, 4, 3),
+    ops: [ { r: 1, l: 96, ...E.ring(40, 20, 26, 70), kvs: 3 }, { r: 1.414, l: 70, ...E.ring(46, 24, 26, 50), kvs: 3 },
+           { r: 2.756, l: 80, ...E.ring(44, 22, 26, 60), kvs: 3 }, { r: 1, l: 40, ...E.ring(50, 26, 26, 40) },
+           { r: 5.4, l: 60, ...E.ring(52, 28, 26, 40), kvs: 3 }, { r: 3.3, l: 40, ...E.ring(56, 30, 26, 40) } ] }],
+  'NOIR KEYS': ['CIRCUITRY', { alg: 1, fb: 4, lfo: lfo('sh', 70, 8, 4),
+    ops: [ { r: 1, l: 98, ...E.pluck(56, 50), kvs: 3 }, { r: 1.73, l: 88, ...E.pluck(62, 50), kvs: 4 },
+           { r: 3, l: 80, ...E.pluck(58, 50), kvs: 3 }, { r: 2.41, l: 72, ...E.pluck(64, 50) },
+           { r: 1.5, l: 60, ...E.pluck(64, 50) }, { r: 4.7, l: 66, ...E.pluck(60, 50) } ] }],
+  RESIDENTBR: ['LASER ZAP', { alg: 16, fb: 6, peg: { rt: [44, 99, 99, 99], lv: [24, 24, 24, 86] },
+    ops: [ { r: 1, l: 98, ...E.pluck(50, 50), kvs: 2 }, { r: 1, l: 80, ...E.pluck(50, 50) },
+           { r: 2, l: 66, ...E.pluck(54, 50) }, { r: 1, l: 60, ...E.pluck(54, 50) },
+           { r: 3, l: 60, ...E.pluck(54, 50) }, { r: 1, l: 76, ...E.pluck(50, 50) } ] }],
+};
+for (const [old, [name, def]] of Object.entries(SCIFI)) {
+  const at = V.findIndex(v => v.name === old);
+  if (at < 0) throw new Error('no preset to replace: ' + old);
+  V[at] = Object.assign({ name, scifi: true }, def);
+}
+
 export const FACTORY = V;
 export const USER_SLOTS = 128 - V.length;
 /** Blank USER voice: a single soft sine, easy to start sculpting from. */

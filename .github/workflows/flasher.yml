@@ -1,0 +1,90 @@
+# Build PumpkinWave 666 and publish the web flasher to GitHub Pages.
+# Settings -> Pages -> Source: "GitHub Actions" must be selected once.
+name: Build firmware and flasher
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Browser preview (WebAssembly)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: WASI SDK 27
+        run: curl -sSL --fail https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-27/wasi-sdk-27.0-x86_64-linux.tar.gz | tar -xz -C "$RUNNER_TEMP"
+      - name: Build preview
+        run: FM1_WASI_SDK="$RUNNER_TEMP/wasi-sdk-27.0-x86_64-linux" ./tools/build-web.sh
+      - name: Check the preset bank is reproducible
+        run: |
+          node tools/Generate-PumpkinWave-DX7.mjs --normalize build/web/simulator.wasm
+          git diff --exit-code app/fm_factory.inc presets/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: preview
+          path: build/preview/index.html
+
+  firmware:
+    name: FM-1 firmware (JieLi toolchain)
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: JieLi toolchain 2.5.3
+        shell: pwsh
+        env:
+          JIELI_TOOLCHAIN_URL: ${{ vars.JIELI_TOOLCHAIN_URL }}
+        run: ./tools/ci/Get-JieLiToolchain.ps1
+      - name: Build firmware and flasher workbench
+        shell: pwsh
+        env:
+          FM1_SOURCE_URL: https://github.com/${{ github.repository }}/archive/${{ github.sha }}.zip
+        run: |
+          ./sdk/Build.ps1 -Package
+          node tools/theme-workbench.mjs build/official-web/FM1-Official-Open-Source.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: |
+            build/official-web/FM1-Official-Open-Source.html
+            build/dx7/generated/FM1_OFFICIAL_OPEN.fwsc
+            build/dx7/web-package-report.json
+            build/dx7/firmware-report.json
+
+  deploy:
+    name: Publish to GitHub Pages
+    needs: [preview, firmware]
+    if: always() && needs.preview.result == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: preview, path: dist/preview }
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with: { name: firmware, path: dist/firmware }
+      - name: Assemble site
+        run: ./tools/ci/assemble-site.sh dist _site
+        env:
+          GIT_SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: _site }
+      - id: pages
+        uses: actions/deploy-pages@v4
