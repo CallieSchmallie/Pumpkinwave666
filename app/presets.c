@@ -5,14 +5,20 @@
 #include "sampledrum.h"
 #include <string.h>
 
-/* FM1 arrangements. Small musical recipes expand into the normal
+/* PumpkinWave 666 arrangements (modified from FM1 Open V14). Small musical recipes expand into the normal
  * editable project format, avoiding sixteen 4 KiB images in program Flash.
  * No random generation, engine allocation or live-state changes happen here.
  * Notes are MIDI pitches; masks read from bit 0 (the first sixteenth note).
  * Unused tracks stay empty, muted, and use the small PSG engine. */
 enum { KEYS, BASS, ARP, LEAD, PAD, BEAT, PERC, STAB };
-enum { ELECTRIC, BELL, ORGAN, ROUND_BASS, WARM_PAD, REED,
-       SOFT_EP, CLAV, GUITAR, MARIMBA, VIBES, BRASS, STRINGS, SUB_BASS, METAL, SOFT_LEAD };
+/* PumpkinWave 666 factory DX7 programs used by the demo arrangements. */
+enum { CRYPTORGAN = 0, TOCCATA = 2, CALLIOPE = 7, CARNIVAL = 8, SEANCE_HARM = 10, WEREWOLF = 11,
+       DUNGEON = 12, VHS_STRINGS = 15, SEASICK = 17, SLASHER = 25, GIALLO = 27, MOON = 29,
+       THEREMIN = 33, BANSHEE = 36, GHOST_CHOIR = 37, GLASS = 45, WISP = 47, VEIL = 49,
+       TUBULAR = 52, MUSIC_BOX = 54, CURSED_BOX = 55, BONE_CHIMES = 57, CLOCK = 59, XYLO = 64,
+       KNELL = 65, STALKER_BASS = 66, DRONE = 67, PROPHET = 68, NIGHT_BASS = 69, DARK_SEQ = 71,
+       BLOOD_BRASS = 72, VAMP_STRINGS = 74, ZOMBIE = 75, SPLATTER = 76, NOSFERATU = 77, CREEP = 78,
+       WHISTLE = 80, CLANG = 82, PSX_FOG = 84, PSX_CHOIR = 85, SCRAPE = 86, VOID = 89 };
 struct part {
     uint8_t source : 3, role : 3;
     uint8_t tone, level, sends;
@@ -29,26 +35,25 @@ struct scene {
 #define PL(tone, role, level, rev, dly) {GROOVE_PLUCK, role, tone, level, rev + 16*dly}
 #define DR(level) {GROOVE_808, BEAT, 0, level, 0}
 #define SA(role, level) {GROOVE_SAMPLE, role, 0, level, 1}
-/* Sixteen genre sketches. Sends are intentional per part: bass stays
- * dry, keys get a small room, sparse leads and arps get tempo-related echoes.
- * delay_steps counts sixteenths at the scene's initial tempo. */
+/* Sixteen haunted sketches across 70s organ horror, 80s slasher synths and
+ * 90s survival-horror fog. Original material; delay_steps counts sixteenths. */
 static const struct scene scenes[GROOVE_FACTORY_PROJECTS] = {
-    {"NEON KEYS",   104,45,1, 8,0,0,4, 64,2,34,76, {FM(ELECTRIC,KEYS,96,4,1), FM(ROUND_BASS,BASS,92,0,0), PL(0,ARP,76,3,3), SA(BEAT,82)}},
-    {"ACID ALLEY",  130,38,1, 0,1,1,3, 38,2,42,68, {AC(1,BASS,42,0,1), DR(86), FM(SOFT_LEAD,LEAD,77,2,4)}},
-    {"VELVET DUSK",  82,41,1,18,2,2,4, 72,1,28,78, {FM(SOFT_EP,KEYS,102,5,0), FM(SUB_BASS,BASS,92,0,0), SA(BEAT,76), FM(VIBES,LEAD,76,4,3)}},
-    {"GLASS TIDE",   72,38,0, 0,0,3,3, 98,1,52,94, {FM(BELL,LEAD,94,7,5), PL(1,ARP,85,7,4), FM(WARM_PAD,PAD,89,7,0)}},
-    {"CHIP PARADE", 142,36,0, 0,3,4,4, 40,2,24,66, {PS(0,LEAD,64,2,2), PS(1,BASS,80,0,0), DR(76), FM(MARIMBA,ARP,76,2,1)}},
-    {"WOODLAND",     96,43,0, 5,4,5,4, 68,1,30,82, {PL(0,KEYS,105,5,1), FM(REED,LEAD,90,5,2), SA(PERC,68), FM(ROUND_BASS,BASS,87,0,0)}},
-    {"NIGHT DRIVE", 116,36,1, 0,1,0,4, 70,2,38,76, {FM(ROUND_BASS,BASS,96,0,0), FM(STRINGS,PAD,75,5,0), AC(2,ARP,28,2,3), DR(84)}},
-    {"DUB HARBOUR",  76,38,1,10,5,2,4, 74,1,70,84, {FM(SUB_BASS,BASS,99,0,0), FM(ORGAN,STAB,84,4,6), DR(82), PL(1,LEAD,74,3,5)}},
-    {"METRO FUNK",  112,40,1,12,6,5,4, 42,1,24,68, {FM(CLAV,STAB,97,2,0), AC(0,BASS,37,0,0), SA(BEAT,83), FM(BRASS,LEAD,73,3,1)}},
-    {"ORBIT BELLS",  92,45,1, 0,3,3,4, 86,2,48,78, {FM(BELL,LEAD,83,5,4), FM(MARIMBA,ARP,68,3,2), FM(SUB_BASS,BASS,82,0,0), DR(72)}},
-    {"DESERT STEP", 108,38,1, 8,7,1,4, 62,2,35,76, {PL(2,LEAD,87,4,3), AC(3,BASS,37,0,0), DR(79), FM(REED,PAD,60,4,0)}},
-    {"SOFT CURRENT",88,41,0,10,2,2,4, 62,1,27,76, {FM(SOFT_EP,KEYS,103,4,0), FM(ROUND_BASS,BASS,86,0,0), SA(PERC,65), FM(GUITAR,LEAD,81,3,2)}},
-    {"BROKEN GRID", 134,36,1, 6,6,4,4, 46,2,42,70, {AC(2,BASS,38,0,1), FM(ORGAN,STAB,78,2,3), SA(BEAT,82), FM(METAL,LEAD,65,3,4)}},
-    {"SUNRISE POP", 122,43,0, 0,0,5,5, 68,2,32,76, {FM(WARM_PAD,PAD,72,5,0), FM(ROUND_BASS,BASS,91,0,0), PL(0,ARP,75,3,3), SA(BEAT,84), FM(SOFT_LEAD,LEAD,82,3,2)}},
-    {"MINIMAL ROOM",124,45,1, 4,1,1,3, 46,2,45,72, {AC(1,BASS,39,0,1), DR(89), FM(CLAV,STAB,70,2,4)}},
-    {"AFTERGLOW",    68,36,0, 0,0,3,2, 90,1,42,80, {FM(SOFT_EP,KEYS,108,5,1), FM(VIBES,LEAD,90,6,3)}}
+    {"CRYPT ORGAN",   76,38,1, 0,5,1,4, 96,3,40,84, {FM(CRYPTORGAN,KEYS,98,6,1), FM(NOSFERATU,BASS,92,0,0), FM(KNELL,LEAD,74,7,4), SA(PERC,64)}},
+    {"SLASHER NITE", 120,40,1, 0,4,0,4, 70,3,46,78, {FM(SLASHER,ARP,92,4,3), FM(DRONE,PAD,80,5,0), FM(STALKER_BASS,BASS,94,0,0), DR(78)}},
+    {"VHS GHOSTS",    84,41,1,10,2,2,4, 88,2,44,82, {FM(VHS_STRINGS,PAD,88,6,0), FM(SEASICK,KEYS,96,5,1), FM(THEREMIN,LEAD,86,6,4), FM(DARK_SEQ,BASS,86,0,0)}},
+    {"GIALLO RUN",   132,36,1, 0,1,1,4, 52,2,40,72, {AC(1,BASS,42,0,1), FM(GIALLO,LEAD,86,3,3), FM(PROPHET,STAB,76,4,2), DR(84)}},
+    {"HAUNTED RINK", 104,43,0, 8,3,4,5, 62,2,30,74, {FM(CALLIOPE,LEAD,86,4,2), FM(CARNIVAL,KEYS,84,4,0), FM(XYLO,ARP,80,3,1), FM(ZOMBIE,BASS,90,0,0), DR(74)}},
+    {"MUSIC BOX",     66,45,1, 0,0,3,3, 98,2,54,92, {FM(CURSED_BOX,LEAD,96,7,5), FM(MUSIC_BOX,ARP,84,6,4), FM(VEIL,PAD,82,7,0)}},
+    {"SEANCE",        70,38,1, 0,5,2,3, 99,1,48,94, {FM(SEANCE_HARM,PAD,92,7,0), FM(GHOST_CHOIR,KEYS,86,7,2), FM(GLASS,LEAD,84,7,5)}},
+    {"WEREWOLF B3",  112,40,1,12,6,5,4, 46,1,26,70, {FM(WEREWOLF,STAB,96,3,0), AC(0,BASS,38,0,0), DR(82), FM(BLOOD_BRASS,LEAD,76,3,1)}},
+    {"PSX FOG",       90,41,1, 6,2,3,4, 92,2,50,88, {FM(PSX_FOG,PAD,88,7,0), FM(PSX_CHOIR,KEYS,84,6,1), FM(WHISTLE,LEAD,84,7,4), SA(BEAT,72)}},
+    {"BELL TOWER",    72,36,1, 0,5,3,4, 99,2,46,86, {FM(TUBULAR,LEAD,80,7,4), FM(CLOCK,ARP,66,6,3), FM(DUNGEON,PAD,74,6,0), FM(NOSFERATU,BASS,80,0,0)}},
+    {"CHIP CRYPT",   142,36,1, 0,3,4,4, 42,2,24,66, {PS(0,LEAD,64,2,2), PS(1,BASS,80,0,0), DR(76), FM(BONE_CHIMES,ARP,70,3,1)}},
+    {"NIGHT STALKR", 118,36,1, 0,1,0,4, 72,2,38,76, {FM(NIGHT_BASS,BASS,96,0,0), FM(VAMP_STRINGS,PAD,76,5,0), AC(2,ARP,28,2,3), DR(84)}},
+    {"RUST CHAPEL",  128,38,1, 6,6,4,4, 48,2,44,72, {AC(2,BASS,38,0,1), FM(CLANG,STAB,78,3,3), SA(BEAT,84), FM(SCRAPE,LEAD,62,4,4)}},
+    {"WITCH DRIFT",   80,43,0, 5,4,5,4, 80,2,36,84, {PL(1,ARP,90,6,2), FM(MOON,PAD,80,6,0), FM(BANSHEE,LEAD,80,6,3), FM(ZOMBIE,BASS,84,0,0)}},
+    {"THRILL NIGHT", 116,40,1,12,6,5,4, 44,1,24,68, {FM(SPLATTER,STAB,96,2,0), AC(0,BASS,37,0,0), SA(BEAT,84), FM(CREEP,LEAD,74,3,1)}},
+    {"DEAD AIR",      60,36,1, 0,0,3,2, 99,3,60,96, {FM(VOID,PAD,94,7,0), FM(WISP,LEAD,86,7,6)}}
 };
 #undef FM
 #undef AC
@@ -79,85 +84,20 @@ static const int8_t melodies[6][16] = {
 };
 static unsigned bar_root(const struct scene *s, unsigned bar)
 {
-    static const uint8_t progression[4][4] = {{0,7,9,5},{0,8,3,10},{0,9,2,7},{0,5,8,7}};
+    static const uint8_t progression[4][4] = {{0,1,8,7},{0,8,5,7},{0,6,1,7},{0,3,8,11}};
     return s->root + progression[s->minor + 2*(s->motif & 1U)][bar];
 }
 static unsigned bar_minor(const struct scene *s, unsigned bar)
 {
-    static const uint8_t quality[4][4] = {{0,0,1,0},{1,0,0,0},{0,1,1,0},{1,1,0,0}};
+    static const uint8_t quality[4][4] = {{1,0,0,0},{1,0,1,0},{1,1,0,0},{1,0,0,0}};
     return quality[s->minor + 2*(s->motif & 1U)][bar];
-}
-static FM1_DSP_DATA const char fm_names[FM1_FM_FACTORY_PROGRAMS][11] = {
-    "NEON KEYS ","ORBIT BELL","SOFT ORGAN","ROUND BASS","WARM AIR  ","WOOD REED ",
-    "SOFT EP   ","DRY CLAV  ","FM GUITAR ","MARIMBA   ","VIBES     ","SOFT BRASS",
-    "FM STRINGS","SUB BASS  ","METAL HIT ","SOFT LEAD "
-};
-/* Three independently voiced operator pairs: body, colour and transient.
- * Unequal carrier levels avoid three identical full-level voices stacking. */
-/* Pack recipe fields without changing the serialized patch layout. */
-struct fm_pair { uint8_t level, coarse : 2, detune : 4, mod, ratio, fine, decay, body; };
-_Static_assert(sizeof(struct part) == 4 && sizeof(struct fm_pair) == 7, "compact recipes");
-struct fm_voice {
-    uint8_t attack, decay, settle, release, body, sustain, mod_attack, mod_release, feedback;
-    struct fm_pair pair[3];
-};
-static FM1_DSP_DATA const struct fm_voice voices[FM1_FM_FACTORY_PROGRAMS] = {
-    {96,52,30,62,84,0,99,66,0, {{98,1,7,54,1,0,65,38},{91,1,8,60,1,0,57,58},{79,1,6,48,7,0,80,0}}},
-    {99,50,28,53,70,0,99,62,0, {{96,1,7,58,3,50,59,0},{82,2,7,48,7,0,68,0},{69,3,7,35,11,0,80,0}}},
-    {95,65,45,78,99,99,95,78,0, {{90,1,7,0,1,0,65,0},{87,2,7,0,1,0,65,0},{74,3,7,0,1,0,65,0}}},
-    {97,72,46,82,91,84,99,86,0, {{99,1,7,42,1,0,76,32},{74,2,7,32,1,0,82,20},{0,1,7,0,1,0,80,0}}},
-    {53,47,36,52,96,92,49,55,0, {{90,1,5,42,1,0,55,82},{84,1,9,34,2,0,53,76},{73,2,7,27,1,0,52,78}}},
-    {84,61,46,72,94,89,78,77,1, {{95,1,7,61,2,0,63,86},{82,1,8,38,1,0,68,75},{70,3,7,29,1,0,72,60}}},
-    {94,49,28,60,86,0,96,64,0, {{98,1,7,44,1,0,60,35},{86,1,8,38,3,0,66,20},{72,2,6,31,1,0,72,0}}},
-    {99,75,47,80,42,0,99,83,1, {{96,1,7,67,1,0,82,18},{81,2,7,55,2,0,86,0},{0,1,7,0,1,0,80,0}}},
-    {97,57,32,66,69,0,99,74,0, {{97,1,7,55,1,0,72,18},{83,2,7,46,3,0,81,0},{66,3,7,38,5,0,85,0}}},
-    {99,67,37,72,34,0,99,81,0, {{98,1,7,60,3,0,85,0},{74,2,7,46,5,0,88,0},{58,3,7,32,7,0,91,0}}},
-    {98,52,25,55,78,0,99,65,0, {{94,1,7,56,4,0,76,0},{76,2,8,39,3,0,81,0},{66,3,6,28,2,0,84,0}}},
-    {81,62,42,72,96,90,67,75,1, {{95,1,7,67,1,0,62,90},{84,1,8,46,1,0,65,83},{70,2,6,40,2,0,68,75}}},
-    {61,48,39,54,96,94,57,58,0, {{89,1,5,54,1,0,55,89},{83,1,9,36,2,0,55,83},{72,2,7,30,4,0,58,76}}},
-    {95,72,44,84,96,94,99,86,0, {{99,1,7,0,1,0,80,0},{0,1,7,0,1,0,80,0},{0,1,7,0,1,0,80,0}}},
-    {99,65,40,72,48,0,99,76,0, {{89,1,7,65,7,31,67,0},{70,2,7,58,11,47,73,0},{56,3,7,48,13,79,78,0}}},
-    {88,60,40,71,96,90,82,75,1, {{96,1,7,45,1,0,65,83},{80,1,8,31,2,0,70,72},{71,2,6,24,1,0,74,66}}}
-};
-static void demo_voice(uint8_t p[156], unsigned tone)
-{
-    const struct fm_voice *sound = &voices[tone];
-    memset(p, 0, 156);
-    memcpy(p + 145, fm_names[tone], 10);
-    for (unsigned op = 0; op < 6; ++op) {
-        uint8_t *v = p + 21 * op;
-        const struct fm_pair *pair = &sound->pair[op / 2];
-        unsigned carrier = op & 1U;
-        v[0] = carrier ? sound->attack : sound->mod_attack;
-        v[1] = carrier ? sound->decay : pair->decay;
-        v[2] = sound->settle; v[3] = carrier ? sound->release : sound->mod_release;
-        v[4] = 99; v[5] = carrier ? sound->body : pair->body;
-        v[6] = carrier ? sound->sustain : sound->sustain ? pair->body : 0;
-        v[8] = 50; v[10] = carrier ? 8 : 18; v[13] = 1;
-        v[15] = carrier ? 2 : 4;
-        v[16] = carrier ? pair->level : pair->mod;
-        v[18] = carrier ? pair->coarse : pair->ratio;
-        v[19] = carrier ? 0 : pair->fine; v[20] = pair->detune;
-        if (tone == ORGAN) {
-            static FM1_DSP_DATA const uint8_t levels[6] = {89,77,84,68,59,52};
-            static FM1_DSP_DATA const uint8_t ratios[6] = {1,2,3,4,6,8};
-            v[16] = levels[op]; v[18] = ratios[op]; v[19] = 0;
-            v[5] = v[6] = 99; v[15] = 1; v[20] = 7;
-        }
-    }
-    for (unsigned i = 126; i < 130; ++i) p[i] = 99;
-    for (unsigned i = 130; i < 134; ++i) p[i] = 50;
-    p[134] = tone == ORGAN ? 31 : 4; p[135] = sound->feedback;
-    p[136] = 1; p[137] = 28; p[138] = 35; p[141] = 1; p[142] = 4;
-    if (tone == WARM_PAD || tone == STRINGS || tone == REED) { p[139] = 2; p[143] = 2; }
-    p[144] = 24; p[155] = 63;
 }
 static void preset(struct groove_preset *p, const struct part *v)
 {
     p->type = v->source; p->volume = v->level; p->modified = 1;
     p->controls.envelope[2] = 100;
     if (v->source == GROOVE_DX7) {
-        demo_voice(p->data, v->tone); p->program = v->tone; p->modified = 0;
+        groove_fm_factory(p->data, v->tone); p->program = v->tone; p->modified = 0;
     }
     else if (v->source == GROOVE_303) {
         static const uint8_t bass[4][BASS303_NPARAMS] = {
@@ -272,7 +212,7 @@ int groove_factory_build(unsigned index, struct groove_project *p)
                 } else {
                     int degree = melodies[s->motif][i];
                     if (degree < 0) continue;
-                    static const uint8_t scale[2][7] = {{0,2,4,7,9,12,14},{0,3,5,7,10,12,15}};
+                    static const uint8_t scale[2][7] = {{0,1,4,5,7,8,12},{0,3,5,6,7,11,12}}; /* hijaz, blues-harmonic minor */
                     pitch = root + 24 + scale[minor][degree]; gate = 11;
                 }
                 n->note = (uint8_t)pitch;

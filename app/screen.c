@@ -3,15 +3,17 @@
 #include "fm_patch.h"
 #include "version.h"
 #include "fm1_engine_control.h"
+#include <stdlib.h>
 #include <string.h>
 enum {
-    BACK = 0x0000,
-    PANEL = 0x18e3,
-    TEXT = 0xef5d,
-    ACCENT = 0x07ff,
-    DIM = 0x738e,
-    GREEN = 0x07e0,
-    AMBER = 0xfd20
+    /* PumpkinWave 666: midnight purple, pumpkin orange, slime and candlelight. */
+    BACK = 0x0822,
+    PANEL = 0x2887,
+    TEXT = 0xef19,
+    ACCENT = 0xfbc0,
+    DIM = 0x8352,
+    GREEN = 0x7fe6,
+    AMBER = 0xfe46
 };
 /* Five columns per glyph, bit 0 at the top. Digits followed by uppercase. */
 static const uint8_t font[36][5] = {
@@ -123,10 +125,11 @@ static void text(unsigned x, unsigned y, const char *s, unsigned scale, uint16_t
 }
 /* Eight tracks stay visible on HOME. SEQ maps the sixteen white keys to one
  * quarter of the 64-step pattern. All drawing and edits run on app_control. */
-enum { OVERVIEW, STEPS, FM_EDIT, FM_ENV, FM_LFO, TONE_EDIT, MIX, BLE, PROJECT, NAME, EFFECTS, SOURCE, ACTIONS, STEP_EDIT, RHYTHM, FM_QUICK, PRESET_BROWSER, ARP_EDIT, STARTUP };
+enum { OVERVIEW, STEPS, FM_EDIT, FM_ENV, FM_LFO, TONE_EDIT, MIX, BLE, PROJECT, NAME, EFFECTS, SOURCE, ACTIONS, STEP_EDIT, RHYTHM, FM_QUICK, PRESET_BROWSER, ARP_EDIT, HAUNT, STARTUP };
 enum { OCT_DOWN, OCT_UP, FX, SCL, ENV, LFO, EDIT, GLO, HOME, SAVE, ARP, SEQ, PLAY, REC };
 #define BUTTON(b) (1U << (b))
-static const uint16_t colors[8] = {0x3c9f, 0x07bf, 0x4eae, 0x06d4, 0xac9f, 0xed18, 0xff06, 0xfba5};
+/* Pumpkin, slime, witch purple, blood, candle, ghost, bone, hex magenta. */
+static const uint16_t colors[8] = {0xfbc0, 0x7fe6, 0xab1f, 0xe946, 0xfe46, 0x7f1f, 0xef19, 0xfa58};
 static const uint8_t white_keys[16] = {0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 19, 21, 23, 24, 26};
 /* FM1 EDIT key IDs 15,17,19,22,24,27,29,31,34,36 minus 14. */
 static const uint8_t edit_keys[10] = {1, 3, 5, 8, 10, 13, 15, 17, 20, 22};
@@ -240,6 +243,7 @@ struct draw_cache {
     uint32_t header_cache, title_cache, middle_cache, hint_cache, hold_cache, seq_cache;
     uint32_t foot_cache[4], row_cache[8], middle_shape, cell_cache[8][16], tile_cache[16];
     unsigned meter_cache[8];
+    uint32_t haunt_cache[8];
 };
 static struct draw_cache saved_cache, band_cache, *cache = &saved_cache;
 static uint32_t led_cache;
@@ -437,6 +441,7 @@ static void knob(unsigned col, const char *label, const char *value, uint16_t co
     text(x, 200, label, 1, TEXT, BACK);
     text(x, 212, value, strlen(value) <= 4 ? 2 : 1, color, BACK);
 }
+#include "pumpkin_ui.inc"
 static __attribute__((noinline)) void header(const struct groove_view *v)
 {
     if (paint_rendering && paint_top >= 30) return;
@@ -506,7 +511,8 @@ static __attribute__((noinline)) void overview(const struct groove_view v[8])
         cache->title_cache = title;
         paint_fill(0, 32, 240, 13, BACK);
         text(8, 35, project_name, 1, ACCENT, BACK);
-        text(86, 35, "OPEN " FM1_RELEASE_VERSION, 1, DIM, BACK);
+        text(86, 35, "666", 1, 0xd8c5, BACK);
+        text(106, 35, FM1_RELEASE_VERSION, 1, DIM, BACK);
         text(146, 35, step_follow ? "PAGE" : "STEP", 1, DIM, BACK);
         number(178, 35, step_follow ? first + 1 : cursor + 1, 2, 1, TEXT, BACK);
         text(190, 35, step_follow ? "-" : "/", 1, DIM, BACK);
@@ -524,10 +530,7 @@ static __attribute__((noinline)) void overview(const struct groove_view v[8])
         if (meta != cache->row_cache[t]) {
             cache->row_cache[t] = meta;
             paint_fill(5, y, 71, 16, BACK);
-            uint16_t bg = t == track ? colors[t] : PANEL;
-            paint_fill(6, y, 18, 16, bg);
-            number(12, y + 5, t + 1, 1, 1, t == track ? BACK : colors[t], bg);
-            paint_fill(7, y + 12, 3, 3, midi_active[t] ? GREEN : bg);
+            pumpkin_badge(6, y, t, t == track, midi_active[t]);
             char fm_name[8]={0}; uint8_t patch[156];
             if (v[t].type==GROOVE_DX7 && !groove_fm_copy(t,patch,NULL)) memcpy(fm_name,patch+145,7);
             text(29, y + 1,
@@ -1335,23 +1338,7 @@ static __attribute__((noinline)) void edit_page_draw(unsigned visible)
         text(8, 231, "EDIT BACK  HOLD EDIT MORE", 1, DIM, BACK);
     }
 }
-static __attribute__((noinline, cold, minsize)) void boot_draw(void)
-{
-    if (cache->title_cache != 0) {
-        cache->title_cache = 0;
-        text(86, 48, "FM1", 4, TEXT, BACK);
-        text(81, 98, "OFFICIAL OPEN", 1, ACCENT, BACK);
-        text((240 - 12 * (sizeof FM1_RELEASE_VERSION - 1)) / 2, 120,
-             FM1_RELEASE_VERSION, 2, TEXT, BACK);
-        text(102, 208, "M-VAVE", 1, DIM, BACK);
-    }
-    if (cache->middle_cache == boot_phase) return;
-    cache->middle_cache = boot_phase;
-    static const uint8_t height[8] = {8, 18, 30, 42, 42, 30, 18, 8};
-    for (unsigned i = 0; i < 8; ++i)
-        paint_fill(58 + 16 * i, 166 - height[i] / 2, 12, height[i],
-                   i < boot_phase ? colors[i] : PANEL);
-}
+static void boot_draw(void) { pumpkin_boot_draw(); }
 static void draw_page_body(const struct fm1_ble_status *ble)
 {
     unsigned visible = boot_active ? STARTUP : glo_down && glo_used ? MIX : page;
@@ -1365,6 +1352,7 @@ static void draw_page_body(const struct fm1_ble_status *ble)
         memset(cache->cell_cache, 0xff, sizeof cache->cell_cache);
         memset(cache->tile_cache, 0xff, sizeof cache->tile_cache);
         memset(cache->meter_cache, 0xff, sizeof cache->meter_cache);
+        memset(cache->haunt_cache, 0xff, sizeof cache->haunt_cache);
         if (visible == PROJECT || visible == PRESET_BROWSER)
             text(8, 8, visible == PROJECT ? "SAVE PROJECT" : "PRESETS", 2, ACCENT, BACK);
     }
@@ -1384,6 +1372,10 @@ static void draw_page_body(const struct fm1_ble_status *ble)
         return;
     }
     header(v);
+    if (visible == HAUNT) {
+        haunt_draw();
+        return;
+    }
     if (visible >= SOURCE) {
         edit_page_draw(visible);
         return;
@@ -1577,6 +1569,15 @@ static void draw_page(const struct fm1_ble_status *ble)
 {
     draw_page_body(ble);
     if (boot_active || (paint_rendering && paint_top >= 30)) return;
+    {
+        unsigned shown = glo_down && glo_used ? MIX : page, level = 0, playing = 0;
+        for (unsigned t = 0; t < GROOVE_TRACKS; ++t) {
+            if (frame_views[t].audible && frame_views[t].level > level) level = frame_views[t].level;
+            playing |= frame_views[t].playing;
+        }
+        if (shown != PRESET_BROWSER && shown != PROJECT && shown != BLE)
+            mini_pumpkin(65, 9, level, frame_time, playing);
+    }
     uint32_t since = 0;
     unsigned active = 1;
     if (glo_down && !glo_used) since = glo_ms;
@@ -1595,7 +1596,7 @@ static void draw(const struct fm1_ble_status *ble)
     unsigned visible = glo_down && glo_used ? MIX : page;
     frame_time = fm1_millis();
     if (boot_active) {
-        boot_phase = (frame_time - boot_started) / 120U;
+        boot_phase = (frame_time - boot_started) / 180U;
         if (boot_phase > 8) boot_phase = 8;
     }
     if (notice && (int32_t)(frame_time - notice_until) >= 0) notice = NULL;
@@ -1638,7 +1639,7 @@ static void draw(const struct fm1_ble_status *ble)
         groove_tone_copy(track, tone_part(), frame_patch);
     else if (visible == FM_LFO && groove_source_type(track) != GROOVE_DX7)
         groove_lfo_copy(track, frame_patch);
-    else if ((visible >= FM_EDIT && visible <= FM_LFO) || visible == NAME || visible == FM_QUICK)
+    else if ((visible >= FM_EDIT && visible <= FM_LFO) || visible == NAME || visible == FM_QUICK || visible == HAUNT)
         groove_fm_copy(track, frame_patch, &frame_controls);
     /* Merge new damage with unfinished bands. Input can replace a pending
      * frame; no stale queue of old encoder positions needs to be displayed. */
@@ -1981,6 +1982,8 @@ static int apply_controls(const struct fm1_controls *controls, uint32_t now,
         } else if (pressed & BUTTON(FX)) {
             if (page != EFFECTS) effects_page = 0;
             open_subpage(EFFECTS);
+        } else if ((pressed & BUTTON(SCL)) && groove_source_type(track) == GROOVE_DX7 && page != HAUNT) {
+            page = HAUNT; haunt_open(); cache->shown_page = ~0U;
         } else if (pressed & BUTTON(SCL)) {
             if (groove_source_type(track) == GROOVE_DX7) {
                 op = operator_selected[track] < 6 ? operator_selected[track] : 0;
@@ -2030,7 +2033,7 @@ static int apply_controls(const struct fm1_controls *controls, uint32_t now,
     if (page != STEPS && page != ACTIONS)
         octave = clamp(octave + !!(pressed & BUTTON(OCT_UP)) - !!(pressed & BUTTON(OCT_DOWN)), -2, 2);
     if ((pressed & BUTTON(SAVE)) && page != PROJECT && page != BLE &&
-        page != SOURCE && page != ACTIONS) {
+        page != SOURCE && page != ACTIONS && !(page == HAUNT && haunt_page == HP_VAULT)) {
         project_return = page; page = PROJECT; project_result = 0;
         project_reload = project_operation = 0;
         project_slot = groove_project_slot(); project_factory = name_cursor = 0;
@@ -2324,6 +2327,8 @@ static int apply_controls(const struct fm1_controls *controls, uint32_t now,
                     static const uint8_t parameters[] = {134, 135, 144};
                     for (unsigned i = 0; i < 3; ++i) groove_fm_edit(track, parameters[i], controls->encoders[2 + i]);
                     groove_control_edit(track, 0, controls->encoders[5], 0);
+                } else if (page == HAUNT) {
+                    haunt_controls(controls, pressed, now);
                 } else if (page == EFFECTS) {
                     unsigned next = (unsigned)clamp((int)effects_page + controls->encoders[6], 0, 2);
                     if (next != effects_page) { effects_page = next; cache->shown_page = ~0U; }
@@ -2604,7 +2609,7 @@ void groove_screen_control(void)
                              encoder_active(controls.encoders);
     /* The logo never blocks control/audio or consumes the first gesture.
      * Ignore the initial MASTER ADC pickup when deciding whether to skip. */
-    if (boot_active && (now - boot_started >= 1200U || controls.buttons || controls.keys ||
+    if (boot_active && (now - boot_started >= 1900U || controls.buttons || controls.keys ||
         encoder_active(controls.encoders) || (master_changed && now - boot_started >= 150U))) {
         boot_active = 0;
         input_changed = 1;
@@ -2695,7 +2700,8 @@ unsigned groove_screen_preset_position(void)
 /* Web shortcuts enter the same editor and use the same parameter handlers. */
 int groove_screen_open(unsigned target)
 {
-    if (target > ARP_EDIT || target == PROJECT) return -1;
+    if (target > HAUNT || target == PROJECT) return -1;
+    if (target == HAUNT && groove_source_type(track) != GROOVE_DX7) return -1;
     boot_active = 0;
     unsigned quick = target == FM_QUICK;
     if (quick && groove_source_type(track) != GROOVE_DX7) target = TONE_EDIT;
@@ -2711,6 +2717,7 @@ int groove_screen_open(unsigned target)
         if (!parameter_page(page)) subpage_return = page;
     } else advanced_edit = !quick && (target == FM_EDIT || target == TONE_EDIT);
     page = target;
+    if (page == HAUNT) haunt_open();
     if (target == STEP_EDIT || target == RHYTHM) { page = STEPS; seq_page = target == STEP_EDIT ? 1 : 2; step_follow = 0; }
     else if (page == STEPS) seq_page = 0;
     if (page == ARP_EDIT) arp_page = 0;
