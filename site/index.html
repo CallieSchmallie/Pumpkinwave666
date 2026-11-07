@@ -61,8 +61,8 @@ footer a{color:var(--muted)}
     <li>Connect the FM-1 by USB-C with a <b>data</b> cable and switch it on.</li>
     <li>Open the flasher and go to the <b>Device update</b> tab. Ignore the "Connect device" button in the top corner for now: it only talks to FM1 Open-family firmware, so a unit running M-VAVE's stock firmware won't show up there.</li>
     <li>Select <b>Connect device</b> in the Device update tab and allow MIDI and SysEx when Chrome asks.</li>
-    <li><b>If the FM-1 runs stock firmware (V15 or V16) or another custom firmware</b>, the page says it found other firmware. Select <b>Enable force flashing and reconnect</b>. That only switches the mode; nothing is written yet.</li>
-    <li>Tick the backup confirmation, then select <b>Force update</b> (or <b>Update</b>) and confirm. Keep the cable connected and the page open until it reports success. Switching firmware can clear projects and samples. If you're already on FM1 Open, back them up first in <b>Projects &amp; sounds</b>.</li>
+    <li><b>If the FM-1 runs stock firmware (V15 or V16) or another custom firmware</b>, the page reports <i>"Device and current firmware recognized"</i>. Select <b>Enable force flash and reconnect</b>. That only switches the mode; nothing is written yet.</li>
+    <li>Tick the backup confirmation, then select <b>Start update</b> and confirm. Keep the cable connected and the page open until it reports success. Switching firmware can clear projects and samples. If you're already on FM1 Open, back them up first in <b>Projects &amp; sounds</b>.</li>
     <li>When the unit restarts, the green-eyed pumpkin should greet you. Press <b>SEL</b> on a DX7 track to open HAUNT LAB.</li>
   </ol>
 </section>
@@ -70,9 +70,9 @@ footer a{color:var(--muted)}
 <section>
   <h2>If the FM-1 isn't found</h2>
   <ul>
-    <li><b>"Browser did not find MIDI input and output":</b> Chrome can't see the FM-1. Try another cable or USB port, switch the unit off and on, then reload the page. Check that the site is allowed to use MIDI (padlock icon, then Site settings, then MIDI devices).</li>
-    <li><b>"Found MIDI ports, but the device did not reply":</b> another program is holding the port. Close it, unplug and replug the FM-1, and connect again.</li>
-    <li><b>"Other firmware recognized":</b> this is expected from stock firmware. Use <b>Enable force flashing and reconnect</b> (step 6).</li>
+    <li><b>"The browser could not find both a MIDI input and output":</b> Chrome can't see the FM-1. Try another cable or USB port, switch the unit off and on, then reload the page. Check that the site is allowed to use MIDI (padlock icon, then Site settings, then MIDI devices).</li>
+    <li><b>"MIDI ports were found, but the device did not reply":</b> another program is holding the port. Close it, unplug and replug the FM-1, and connect again.</li>
+    <li><b>"Device and current firmware recognized":</b> this is expected from stock firmware. Use <b>Enable force flash and reconnect</b> (step 6).</li>
     <li>Open <b>Connection details</b> under the Device update panel to see exactly which MIDI ports Chrome found.</li>
     <li>On Linux, Chrome may need <code>chrome://flags</code> to allow Web MIDI, or your user may need to be in the <code>audio</code> group.</li>
   </ul>
